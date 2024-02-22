@@ -11,7 +11,7 @@ This is a section of the Cyfrin Solidity Course.
     - [Test Coverage](#test-coverage)
 - [Deployment to a testnet or mainnet](#deployment-to-a-testnet-or-mainnet)
   - [Scripts](#scripts)
-  - [Makefile](#Makefile for scripts)
+  - [Makefile](#makefile-for-scripts)
     - [Withdraw](#withdraw)
   - [Estimate gas](#estimate-gas)
 - [Formatting](#formatting)
