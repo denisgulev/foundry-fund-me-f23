@@ -60,6 +60,12 @@ contract FundMeTest is Test {
         fundMe.withdraw();
     }
 
+    function testRevertsWithdrawIfNotOwner() public funded {
+        vm.expectRevert(FundMe.FundMe__NotOwner.selector);
+        vm.prank(address(2));
+        fundMe.withdraw();
+    }
+
     function testWithdrawWithASingleFunder() public funded {
         uint256 startingOwnerBalance = fundMe.getOwner().balance;
         uint256 startingFundMeBalance = address(fundMe).balance;
@@ -71,10 +77,7 @@ contract FundMeTest is Test {
         uint256 endingFundMeBalance = address(fundMe).balance;
 
         assertEq(endingFundMeBalance, 0);
-        assertEq(
-            startingFundMeBalance + startingOwnerBalance,
-            endingOwnerBalance
-        );
+        assertEq(startingFundMeBalance + startingOwnerBalance, endingOwnerBalance);
     }
 
     function testWithdrawWithMultipleFunder() public funded {
@@ -82,7 +85,7 @@ contract FundMeTest is Test {
         uint160 startingFunderIndex = 2;
 
         for (uint160 i = startingFunderIndex; i < numberOfFunders; i++) {
-            hoax(address(i), STARTING_BALANCE);
+            hoax(address(i), STARTING_BALANCE); // sets up prank and assigns some ether
             fundMe.fund{value: AMOUNT_FUNDED}();
         }
 
@@ -93,10 +96,13 @@ contract FundMeTest is Test {
         fundMe.withdraw();
 
         assertEq(address(fundMe).balance, 0);
-        assertEq(
-            startingFundMeBalance + startingOwnerBalance,
-            fundMe.getOwner().balance
-        );
+        assertEq(startingFundMeBalance + startingOwnerBalance, fundMe.getOwner().balance);
+    }
+
+    function testRevertsCheaperWithdrawIfNotOwner() public funded {
+        vm.expectRevert(FundMe.FundMe__NotOwner.selector);
+        vm.prank(address(2));
+        fundMe.cheaperWithdraw();
     }
 
     function testWithdrawWithMultipleFunderCheaper() public funded {
@@ -115,9 +121,6 @@ contract FundMeTest is Test {
         fundMe.cheaperWithdraw();
 
         assertEq(address(fundMe).balance, 0);
-        assertEq(
-            startingFundMeBalance + startingOwnerBalance,
-            fundMe.getOwner().balance
-        );
+        assertEq(startingFundMeBalance + startingOwnerBalance, fundMe.getOwner().balance);
     }
 }
