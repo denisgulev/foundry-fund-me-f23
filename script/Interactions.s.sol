@@ -19,16 +19,13 @@ contract FundFundMe is Script {
     }
 
     function run() external {
-        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment(
-            "FundMe",
-            block.chainid
-        );
+        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment("FundMe", block.chainid);
 
         fundFundMe(mostRecentlyDeployed);
     }
 }
 
-contract WidthdrawFundMe is Script {
+contract WithdrawFundMe is Script {
     uint256 constant FUND_AMOUNT = 0.01 ether;
 
     // withdraw will be run only on the most recently deployed contract
@@ -39,10 +36,7 @@ contract WidthdrawFundMe is Script {
     }
 
     function run() external {
-        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment(
-            "FundMe",
-            block.chainid
-        );
+        address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment("FundMe", block.chainid);
 
         withdrawFundMe(mostRecentlyDeployed);
     }

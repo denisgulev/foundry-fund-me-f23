@@ -179,17 +179,3 @@ forge install <package>@<package-version> --no-commit
 
     ** Reading and writing from Storage, costs a lot of gas
 
-
-
-Uncovered for script/HelperConfig.s.sol:
-- Function "getSepoliaEthConfig" (location: source ID 25, line 34, chars 935-1157, hits: 0)
-- Function "getMainnetEthConfig" (location: source ID 25, line 39, chars 1163-1385, hits: 0)
-- Function "getOrCreateAnvilEthConfig" (location: source ID 25, line 44, chars 1391-1986, hits: 0)
-
-Uncovered for script/Interactions.s.sol:
-- Function "run" (location: source ID 26, line 21, chars 642-854, hits: 0)
-- Function "run" (location: source ID 26, line 41, chars 1208-1424, hits: 0)
-
-Uncovered for src/PriceConverter.sol:
-- Function "getPrice" (location: source ID 28, line 10, chars 328-665, hits: 0)
-- Function "getConversionRate" (location: source ID 28, line 19, chars 689-1042, hits: 0)
