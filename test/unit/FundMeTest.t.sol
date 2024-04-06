@@ -13,8 +13,18 @@ contract FundMeTest is Test {
 
     address USER = makeAddr("user");
     uint256 constant AMOUNT_FUNDED = 1e18;
+    uint256 constant NOT_ENOUGH_AMOUNT_FUNDED = 1e10;
     uint256 constant STARTING_BALANCE = 10e18;
     uint256 constant GAS_PRICE = 1;
+    uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
+
+    // Modifiers
+
+    modifier funded() {
+        vm.prank(USER); // Tell us that the next TX will be sent by the USER
+        fundMe.fund{value: AMOUNT_FUNDED}();
+        _;
+    }
 
     function setUp() external {
         // instantiate the contract
@@ -24,43 +34,22 @@ contract FundMeTest is Test {
         vm.deal(USER, STARTING_BALANCE);
     }
 
-    function testMinimumDollarIsFive() public {
-        assertEq(fundMe.MINIMUM_USD(), 5 * 10 ** 18);
-    }
-
-    function testOwnerIsMsgSender() public {
-        assertEq(fundMe.getOwner(), msg.sender);
-    }
-
     // Forked Tests --> used to run tests on a simulated real environment,
     // where we can run tests with addresses outside of this system
 
-    // TODO - to make this test work, we should create a node on Alchemy
-    function testGetVersionIsAccurate() public {
-        assertEq(fundMe.getVersion(), 4);
-    }
+    // Fund Tests
 
     function testFundFailsWithoutEnoughEth() public {
-        vm.expectRevert(); // expect next line to revert
-        fundMe.fund{value: 1e10}();
+        vm.expectRevert(FundMe.FundMe__NotEnoughEth.selector); // expect next line to revert
+        fundMe.fund{value: NOT_ENOUGH_AMOUNT_FUNDED}();
     }
 
-    function testFundFPassThrough() public funded {
+    function testFundPassThrough() public funded {
         assertEq(AMOUNT_FUNDED, fundMe.getAmountFunded(USER));
         assertEq(USER, fundMe.getFunder(0));
     }
 
-    modifier funded() {
-        vm.prank(USER); // Tell us that the next TX will be sent by the USER
-        fundMe.fund{value: AMOUNT_FUNDED}();
-        _;
-    }
-
-    function testOnlyOwnerCanWithdraw() public funded {
-        vm.expectRevert();
-        vm.prank(USER);
-        fundMe.withdraw();
-    }
+    // Withdraw Tests
 
     function testRevertsWithdrawIfNotOwner() public funded {
         vm.expectRevert(FundMe.FundMe__NotOwner.selector);
@@ -82,7 +71,7 @@ contract FundMeTest is Test {
         assertEq(startingFundMeBalance + startingOwnerBalance, endingOwnerBalance);
     }
 
-    function testWithdrawWithMultipleFunder() public funded {
+    function testWithdrawWithMultipleFunders() public funded {
         uint160 numberOfFunders = 10;
         uint160 startingFunderIndex = 2;
 
@@ -100,6 +89,8 @@ contract FundMeTest is Test {
         assertEq(address(fundMe).balance, 0);
         assertEq(startingFundMeBalance + startingOwnerBalance, fundMe.getOwner().balance);
     }
+
+    // CheaperWithdraw Tests
 
     function testRevertsCheaperWithdrawIfNotOwner() public funded {
         vm.expectRevert(FundMe.FundMe__NotOwner.selector);
@@ -124,5 +115,20 @@ contract FundMeTest is Test {
 
         assertEq(address(fundMe).balance, 0);
         assertEq(startingFundMeBalance + startingOwnerBalance, fundMe.getOwner().balance);
+    }
+
+    // View / Pure function tests
+
+    function testMinimumDollarIsFive() public {
+        assertEq(MINIMUM_USD, fundMe.getMinimumUsdRequested());
+    }
+
+    function testOwnerIsMsgSender() public {
+        assertEq(msg.sender, fundMe.getOwner());
+    }
+
+    // TODO - to make this test work, we should create a node on Alchemy
+    function testGetVersionIsAccurate() public {
+        assertEq(4, fundMe.getVersion());
     }
 }

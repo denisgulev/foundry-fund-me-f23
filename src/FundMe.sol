@@ -8,6 +8,7 @@ contract FundMe {
     using PriceConverter for uint256;
 
     error FundMe__NotOwner();
+    error FundMe__NotEnoughEth();
 
     mapping(address => uint256) private s_addressToAmountFunded;
     address[] private s_funders;
@@ -17,41 +18,24 @@ contract FundMe {
     uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
     AggregatorV3Interface private s_priceFeed;
 
-    constructor(address priceFeed) {
-        s_priceFeed = AggregatorV3Interface(priceFeed);
-        i_owner = msg.sender;
-    }
-
-    function fund() public payable {
-        require(msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD, "You need to spend more ETH!");
-        // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
-        s_addressToAmountFunded[msg.sender] += msg.value;
-        s_funders.push(msg.sender);
-    }
-
-    function getVersion() public view returns (uint256) {
-        // AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
-        // AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeed.version());
-        return s_priceFeed.version();
-    }
-
     modifier onlyOwner() {
         // require(msg.sender == owner);
         if (msg.sender != i_owner) revert FundMe__NotOwner();
         _;
     }
 
-    function cheaperWithdraw() public onlyOwner {
-        uint256 fundersLength = s_funders.length;
+    constructor(address priceFeed) {
+        s_priceFeed = AggregatorV3Interface(priceFeed);
+        i_owner = msg.sender;
+    }
 
-        for (uint256 funderIndex = 0; funderIndex < fundersLength; funderIndex++) {
-            address funder = s_funders[funderIndex];
-            s_addressToAmountFunded[funder] = 0;
+    function fund() public payable {
+        if (msg.value.getConversionRate(s_priceFeed) < MINIMUM_USD) {
+            revert FundMe__NotEnoughEth();
         }
-        s_funders = new address[](0);
-
-        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
-        require(callSuccess, "Call failed");
+        // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
+        s_addressToAmountFunded[msg.sender] += msg.value;
+        s_funders.push(msg.sender);
     }
 
     function withdraw() public onlyOwner {
@@ -77,6 +61,20 @@ contract FundMe {
         (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
         require(callSuccess, "Call failed");
     }
+
+    function cheaperWithdraw() public onlyOwner {
+        uint256 fundersLength = s_funders.length;
+
+        for (uint256 funderIndex = 0; funderIndex < fundersLength; funderIndex++) {
+            address funder = s_funders[funderIndex];
+            s_addressToAmountFunded[funder] = 0;
+        }
+        s_funders = new address[](0);
+
+        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
+        require(callSuccess, "Call failed");
+    }
+
     // Explainer from: https://solidity-by-example.org/fallback/
     // Ether is sent to contract
     //      is msg.data empty?
@@ -99,6 +97,12 @@ contract FundMe {
 
     // View / Pure functions
 
+    function getVersion() public view returns (uint256) {
+        // AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        // AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeed.version());
+        return s_priceFeed.version();
+    }
+
     function getFunder(uint256 index) external view returns (address) {
         return s_funders[index];
     }
@@ -109,5 +113,9 @@ contract FundMe {
 
     function getOwner() external view returns (address) {
         return i_owner;
+    }
+
+    function getMinimumUsdRequested() external pure returns (uint256) {
+        return MINIMUM_USD;
     }
 }
